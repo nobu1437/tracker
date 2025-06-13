@@ -1,7 +1,7 @@
 import UIKit
 
 final class TrackerListSupView: UICollectionReusableView{
-  private let titleLabel = UILabel()
+   let titleLabel = UILabel()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -11,7 +11,7 @@ final class TrackerListSupView: UICollectionReusableView{
         addSubview(titleLabel)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            titleLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
+            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 28),
             titleLabel.topAnchor.constraint(equalTo: topAnchor),
             titleLabel.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])

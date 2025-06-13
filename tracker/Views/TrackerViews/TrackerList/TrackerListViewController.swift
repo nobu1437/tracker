@@ -83,8 +83,6 @@ class TrackerListViewController: UIViewController{
         view.addSubview(collectionView)
         collectionView.register(TrackerListCell.self, forCellWithReuseIdentifier: "cell")
         collectionView.register(TrackerListSupView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "header")
-        collectionView.register(TrackerListSupView.self, forSupplementaryViewOfKind:
-                                    UICollectionView.elementKindSectionFooter, withReuseIdentifier: "footer")
         NSLayoutConstraint.activate([
             collectionView.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: 10),
             collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
@@ -100,6 +98,7 @@ class TrackerListViewController: UIViewController{
         layout.minimumInteritemSpacing = 9
         layout.sectionInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
         layout.itemSize = CGSize(width: (UIScreen.main.bounds.width - 60) / 2, height: 148)
+        layout.headerReferenceSize = CGSize(width: UIScreen.main.bounds.width, height: 18)
         return UICollectionView(frame: .zero, collectionViewLayout: layout)
     }
     
@@ -217,6 +216,23 @@ extension TrackerListViewController: UICollectionViewDataSource{
         }
         cell?.daysCount.text = "\(count) дней"
         return cell!
+    }
+    func collectionView(_ collectionView: UICollectionView,
+                        viewForSupplementaryElementOfKind kind: String,
+                        at indexPath: IndexPath) -> UICollectionReusableView {
+        if kind == UICollectionView.elementKindSectionHeader {
+            let header = collectionView.dequeueReusableSupplementaryView(
+                ofKind: kind,
+                withReuseIdentifier: "header",
+                for: indexPath
+            ) as! TrackerListSupView
+            
+            let categoryName = visibleCategories[indexPath.section].name
+            header.titleLabel.text = categoryName
+            return header
+        }
+        
+        return UICollectionReusableView()
     }
 }
 extension TrackerListViewController: UICollectionViewDelegate{
