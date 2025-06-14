@@ -1,9 +1,9 @@
 import Foundation
 
 extension Date {
-    func stripped() -> Date {
+    func stripped() -> Date? {
         let components = Calendar.current.dateComponents([.year, .month, .day], from: self)
-        return Calendar.current.date(from: components)!
+        return Calendar.current.date(from: components)
     }
 }
 extension Date {
