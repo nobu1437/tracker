@@ -13,10 +13,40 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
-        // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
-        // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
-        guard let _ = (scene as? UIWindowScene) else { return }
+        guard let windowScene = (scene as? UIWindowScene) else { return }
+        window = UIWindow(windowScene: windowScene)
+        let tabBar = UITabBarController()
+        let appearance = UITabBarAppearance()
+        appearance.configureWithDefaultBackground()
+        appearance.backgroundColor = .ypWhite
+        if #available(iOS 15.0, *) {
+            tabBar.tabBar.scrollEdgeAppearance = appearance
+        }
+        tabBar.tabBar.standardAppearance = appearance
+        let navAppearance = UINavigationBarAppearance()
+        navAppearance.titleTextAttributes = [
+            .font: UIFont.systemFont(ofSize: 16,weight: .medium),
+            .foregroundColor: UIColor.black ]
+        navAppearance.shadowColor = .clear
+        navAppearance.backgroundColor = .ypWhite
+        
+        UINavigationBar.appearance().standardAppearance = navAppearance
+        UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
+        let statisticVC = StatisticListViewController()
+        let statisticNavVC = UINavigationController(rootViewController: statisticVC)
+        statisticNavVC.tabBarItem = UITabBarItem(title: "Статистика",
+                                              image: UIImage(systemName:
+                                                                "hare.fill"),
+                                              tag: 0)
+        let trackerVC = TrackerListViewController()
+        let trackerNavVC = UINavigationController(rootViewController: trackerVC)
+        trackerNavVC.tabBarItem = UITabBarItem(title: "Трекеры",
+                                            image: UIImage(systemName:
+                                                            "record.circle.fill"),
+                                            tag: 1)
+        tabBar.setViewControllers([trackerNavVC,statisticNavVC], animated: true)
+        window?.rootViewController = tabBar
+        window?.makeKeyAndVisible()
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
@@ -49,7 +79,4 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Save changes in the application's managed object context when the application transitions to the background.
         (UIApplication.shared.delegate as? AppDelegate)?.saveContext()
     }
-
-
 }
-
