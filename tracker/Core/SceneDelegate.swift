@@ -17,14 +17,21 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window = UIWindow(windowScene: windowScene)
         let tabBar = UITabBarController()
         let appearance = UITabBarAppearance()
-        
         appearance.configureWithDefaultBackground()
+        appearance.backgroundColor = .ypWhite
         if #available(iOS 15.0, *) {
             tabBar.tabBar.scrollEdgeAppearance = appearance
         }
-        
         tabBar.tabBar.standardAppearance = appearance
+        let navAppearance = UINavigationBarAppearance()
+        navAppearance.titleTextAttributes = [
+            .font: UIFont.systemFont(ofSize: 16,weight: .medium),
+            .foregroundColor: UIColor.black ]
+        navAppearance.shadowColor = .clear
+        navAppearance.backgroundColor = .ypWhite
         
+        UINavigationBar.appearance().standardAppearance = navAppearance
+        UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
         let statisticVC = StatisticListViewController()
         let statisticNavVC = UINavigationController(rootViewController: statisticVC)
         statisticNavVC.tabBarItem = UITabBarItem(title: "Статистика",
