@@ -1,13 +1,14 @@
 import UIKit
 
-final class ScheduleViewController: UIViewController{
+final class ScheduleViewController: UIViewController {
     
-    let backgroundView = UIView()
     let tableView = UITableView()
     let readyButton = UIButton()
     var schedule:Set<Weekday>
     var onSchedulePicked: ((Set<Weekday>) -> Void)?
+    
     let week = ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"]
+    
     init(schedule:Set<Weekday>) {
         self.schedule = schedule
         super.init(nibName: nil, bundle: nil)
@@ -20,21 +21,20 @@ final class ScheduleViewController: UIViewController{
         super.viewDidLoad()
         setupUI()
     }
-    @objc func readyButtonTapped(){
+    @objc func readyButtonTapped() {
         onSchedulePicked?(schedule)
         navigationController?.popViewController(animated: true)
     }
     
-    func setupUI(){
+    func setupUI() {
         title = "Расписание"
         view.backgroundColor = .ypWhite
         navigationItem.hidesBackButton = true
         setupReadyButton()
-        setupBackgroundView()
         setupTableView()
     }
     
-    func setupReadyButton(){
+    func setupReadyButton() {
         readyButton.setTitle("Готово", for: .normal)
         readyButton.setTitleColor(.ypWhite, for: .normal)
         readyButton.backgroundColor = .ypBlack
@@ -43,55 +43,60 @@ final class ScheduleViewController: UIViewController{
         readyButton.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(readyButton)
         NSLayoutConstraint.activate([
-            readyButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            readyButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            readyButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -16),
+            readyButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+            readyButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+            readyButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
             readyButton.heightAnchor.constraint(equalToConstant: 60)
         ])
     }
     
-    func setupBackgroundView(){
-        backgroundView.backgroundColor = .ypGray
-        backgroundView.layer.cornerRadius = 16
-        backgroundView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(backgroundView)
-        NSLayoutConstraint.activate([
-            backgroundView.topAnchor.constraint(equalTo: view.topAnchor, constant: 16),
-            backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            backgroundView.bottomAnchor.constraint(equalTo: readyButton.topAnchor, constant: -47)
-        ])
-    }
-    
-    func setupTableView(){
+    func setupTableView() {
         tableView.register(ScheduleViewCell.self, forCellReuseIdentifier: "cell")
         tableView.dataSource = self
         tableView.delegate = self
         tableView.translatesAutoresizingMaskIntoConstraints = false
-        backgroundView.addSubview(tableView)
+        tableView.separatorColor = .ypGray
+        tableView.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+        view.addSubview(tableView)
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: backgroundView.topAnchor),
-            tableView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor)
+            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor,constant: 16),
+            tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor,constant: 16),
+            tableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor,constant: -16),
+            tableView.bottomAnchor.constraint(equalTo: readyButton.topAnchor,constant: -47)
         ])
     }
 }
-extension ScheduleViewController: UITableViewDataSource{
+extension ScheduleViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        week.count
+        print(week.count)
+       return week.count
+        
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 75
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! ScheduleViewCell
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as? ScheduleViewCell else
+        { assertionFailure("no cell at scheduleViewCell")
+            return UITableViewCell()
+        }
         let weekday = Weekday.allCases[indexPath.row]
         cell.configure(with: weekday, isOn: schedule.contains(weekday))
-        tableView.rowHeight = 75
-        
-        if indexPath.row == 0 {
-            cell.divider.isHidden = true
+        if indexPath.row == 0{
+            cell.contentView.layer.masksToBounds = true
+            cell.contentView.layer.cornerRadius = 16
+            cell.contentView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         }
+        if indexPath.row == week.count - 1 {
+            cell.contentView.layer.masksToBounds = true
+            cell.contentView.layer.cornerRadius = 16
+            cell.contentView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+            cell.separatorInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: .greatestFiniteMagnitude)
         
+        }
+        print("cellForRowAt", indexPath.row)
         cell.switchChanged = { [weak self] isOn in
             if isOn {
                 self?.schedule.insert(weekday)
@@ -102,7 +107,7 @@ extension ScheduleViewController: UITableViewDataSource{
         return cell
     }
 }
-extension ScheduleViewController: UITableViewDelegate{
+extension ScheduleViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         let weekday = Weekday.allCases[indexPath.row]
