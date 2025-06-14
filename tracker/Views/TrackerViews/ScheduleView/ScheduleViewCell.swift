@@ -1,9 +1,8 @@
 import UIKit
 
-class ScheduleViewCell:UITableViewCell{
+final class ScheduleViewCell:UITableViewCell {
     let title = UILabel()
     let dateSwitch = UISwitch()
-    let divider = UIView()
     
     var switchChanged: ((Bool) -> Void)?
     
@@ -17,7 +16,9 @@ class ScheduleViewCell:UITableViewCell{
         setupUI()
     }
     
-    func setupUI(){
+    private func setupUI() {
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
         title.font = .systemFont(ofSize: 17, weight: .regular)
         title.translatesAutoresizingMaskIntoConstraints = false
         
@@ -25,17 +26,11 @@ class ScheduleViewCell:UITableViewCell{
         dateSwitch.onTintColor = .ypBlue
         dateSwitch.translatesAutoresizingMaskIntoConstraints = false
         
-        divider.backgroundColor = .ypGray.withAlphaComponent(0.3)
-        divider.translatesAutoresizingMaskIntoConstraints = false
         
         contentView.addSubview(title)
         contentView.addSubview(dateSwitch)
-        contentView.addSubview(divider)
         
         NSLayoutConstraint.activate([
-            divider.topAnchor.constraint(equalTo: topAnchor),
-            divider.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            divider.leadingAnchor.constraint(equalTo: leadingAnchor,constant: 16),
             title.centerYAnchor.constraint(equalTo: centerYAnchor),
             title.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             dateSwitch.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -48,5 +43,6 @@ class ScheduleViewCell:UITableViewCell{
     func configure(with weekday: Weekday, isOn: Bool) {
         title.text = weekday.title
         dateSwitch.isOn = isOn
+        contentView.backgroundColor = .ypBackground
     }
 }
