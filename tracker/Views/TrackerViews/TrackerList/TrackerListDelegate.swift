@@ -1,5 +1,5 @@
 import Foundation
 
 protocol TrackerListDelegate: AnyObject {
-    func DidTapButton(_ cell: TrackerListCell)
+    func didTapButton(_ cell: TrackerListCell)
 }
