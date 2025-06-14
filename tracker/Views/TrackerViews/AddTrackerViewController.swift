@@ -1,6 +1,6 @@
 import UIKit
 
-final class AddTrackerViewController: UIViewController{
+final class AddTrackerViewController: UIViewController {
     private let regularButton = UIButton()
     private  let irregularButton = UIButton()
     private var isRegular = false
@@ -10,11 +10,12 @@ final class AddTrackerViewController: UIViewController{
         super.viewDidLoad()
         setupUI()
     }
-    private func setupUI(){
+    private func setupUI() {
         view.backgroundColor = .ypWhite
         title = "Создание Трекера"
         regularButton.tintColor = .ypWhite
         regularButton.setTitle("Привычка", for: .normal)
+        regularButton.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
         regularButton.backgroundColor = .ypBlack
         regularButton.layer.cornerRadius = 16
         regularButton.translatesAutoresizingMaskIntoConstraints = false
@@ -22,6 +23,7 @@ final class AddTrackerViewController: UIViewController{
         
         irregularButton.tintColor = .ypWhite
         irregularButton.setTitle("Нерегулярные событие", for: .normal)
+        irregularButton.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
         irregularButton.backgroundColor = .ypBlack
         irregularButton.layer.cornerRadius = 16
         irregularButton.translatesAutoresizingMaskIntoConstraints = false
@@ -41,13 +43,13 @@ final class AddTrackerViewController: UIViewController{
             stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20)
         ])
     }
-    @objc func regularButtonTapped(){
+    @objc private func regularButtonTapped() {
         isRegular = true
         let vc = TrackerTypeViewController(isRegular: isRegular)
         vc.delegate = delegate
         navigationController?.pushViewController(vc, animated: true)
     }
-    @objc func irregularButtonTapped(){
+    @objc private func irregularButtonTapped() {
         isRegular = false
         let vc = TrackerTypeViewController(isRegular: isRegular)
         vc.delegate = delegate
