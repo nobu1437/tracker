@@ -81,7 +81,7 @@ final class TrackerListCell: UICollectionViewCell {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    @objc func didTapButton(){
-        delegate?.DidTapButton(self)
+    @objc func didTapButton() {
+        delegate?.didTapButton(self)
     }
 }
