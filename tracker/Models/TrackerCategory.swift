@@ -1,6 +1,6 @@
 import Foundation
 
-struct TrackerCategory{
+struct TrackerCategory {
     let name: String
     var trackers: [Tracker]
 }
