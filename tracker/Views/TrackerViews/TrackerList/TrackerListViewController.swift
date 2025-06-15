@@ -15,22 +15,22 @@ final class TrackerListViewController: UIViewController{
     private var visibleCategories: [TrackerCategory] {
         let weekday = currentDate.weekday
         let selectedDate = currentDate.stripped()
-        return categories.map { category in
-            let filteredTrackers = category.trackers.filter { tracker in
-                if tracker.isRegular {
-                    return tracker.schedule.contains(weekday)
-                } else {
-                    if let completed = completedTrackers.first(where: { $0.trackerId == tracker.id }) {
-                        return completed.firstComletionDate == selectedDate
-                    } else {
-                        return true
-                    }
-                }
+        return categories
+            .map { category in
+                let trackers = category.trackers.filter { isTrackerVisible($0, weekday: weekday, selectedDate: selectedDate) }
+                return TrackerCategory(name: category.name, trackers: trackers)
             }
-            return TrackerCategory(name: category.name, trackers: filteredTrackers)
-        }.filter { !$0.trackers.isEmpty }
+            .filter { !$0.trackers.isEmpty }
+}
+    private func isTrackerVisible(_ tracker: Tracker, weekday: Int, selectedDate: Date) -> Bool {
+    if tracker.isRegular {
+        return tracker.schedule.contains(weekday)
+    } else if let completed = completedTrackers.first(where: { $0.trackerId == tracker.id }) {
+        return completed.firstComletionDate == selectedDate
+    } else {
+        return true
     }
-    
+}
     override func viewDidLoad() {
         super.viewDidLoad()
         categories.append(firstCategory)
@@ -167,6 +167,7 @@ final class TrackerListViewController: UIViewController{
             emptyLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16)
         ])
     }
+    
 }
 
 extension TrackerListViewController: UISearchBarDelegate {
