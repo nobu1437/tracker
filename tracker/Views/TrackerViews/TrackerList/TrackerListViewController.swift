@@ -1,23 +1,31 @@
 import UIKit
 
 final class TrackerListViewController: UIViewController{
-    private  lazy var collectionView = UICollectionView()
-    private  var currentDate = Date()
+    private lazy var collectionView = UICollectionView()
+    private var currentDate = Date()
     private var addTracker = UIButton()
-    private  var datePicker = UIDatePicker()
+    private var datePicker = UIDatePicker()
     private var titleLabel = UILabel()
-    private  var searchBar = UISearchBar()
+    private var searchBar = UISearchBar()
     private var imageView = UIImageView()
     private var emptyLabel = UILabel()
-    private var firstCategory:TrackerCategory = .init(name: "first", trackers: [.init(name: "name", color: UIColor._1, emoji: "😃", schedule: [.monday,.sunday,.friday,.saturday],)])
-    
     private var completedTrackers: [TrackerRecord] = []
     private var categories: [TrackerCategory] = []
+    private var firstCategory: TrackerCategory = .init(name: "first", trackers: [])
     private var visibleCategories: [TrackerCategory] {
         let weekday = currentDate.weekday
+        let selectedDate = currentDate.stripped()
         return categories.map { category in
             let filteredTrackers = category.trackers.filter { tracker in
-                tracker.schedule.contains(weekday)
+                if tracker.isRegular {
+                    return tracker.schedule.contains(weekday)
+                } else {
+                    if let completed = completedTrackers.first(where: { $0.trackerId == tracker.id }) {
+                        return completed.firstComletionDate == selectedDate
+                    } else {
+                        return true
+                    }
+                }
             }
             return TrackerCategory(name: category.name, trackers: filteredTrackers)
         }.filter { !$0.trackers.isEmpty }
@@ -25,7 +33,6 @@ final class TrackerListViewController: UIViewController{
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        firstCategory.trackers.append(.init(name: "second", color: UIColor.green, emoji: "🤣", schedule: [.friday]))
         categories.append(firstCategory)
         setupUI()
     }
@@ -201,14 +208,13 @@ extension TrackerListViewController: UICollectionViewDataSource {
             if completedTracker.trackerId == tracker.id {
                 for date in completedTracker.date {
                     if date.stripped() == datePicker.date.stripped() {
-                        cell.addButton.setImage(UIImage(systemName: "checkmark"), for: .normal)
-                        cell.addButton.backgroundColor = tracker.color.withAlphaComponent(0.3)
-                        break
+                            cell.addButton.setImage(UIImage(systemName: "checkmark"), for: .normal)
+                            cell.addButton.backgroundColor = tracker.color.withAlphaComponent(0.3)
+                            break
                     }
                 }
             }
         }
-        
         cell.titleLabel.text = "\(tracker.name)"
         cell.backgroundColorView.backgroundColor = tracker.color
         cell.emojiLabel.text = tracker.emoji
@@ -282,7 +288,8 @@ extension TrackerListViewController: TrackerListDelegate {
                 if updatedDates.isEmpty {
                     completedTrackers.remove(at: index)
                 } else {
-                    let updatedRecord = TrackerRecord(trackerId: tracker.id, date: updatedDates)
+                    let newFirstCompletionDate = updatedDates.min()
+                    let updatedRecord = TrackerRecord(trackerId: tracker.id, date: updatedDates, firstComletionDate: newFirstCompletionDate)
                     completedTrackers[index] = updatedRecord
                 }
 
@@ -292,15 +299,21 @@ extension TrackerListViewController: TrackerListDelegate {
 
             } else {
                 updatedDates.append(selectedDate)
-                let updatedRecord = TrackerRecord(trackerId: tracker.id, date: updatedDates)
+                let newFirstCompletionDate: Date
+                if let oldFirst = oldRecord.firstComletionDate {
+                                newFirstCompletionDate = min(oldFirst, selectedDate)
+                } else {
+                    newFirstCompletionDate = selectedDate
+                }
+                let updatedRecord = TrackerRecord(trackerId: tracker.id, date: updatedDates, firstComletionDate: newFirstCompletionDate)
                 completedTrackers[index] = updatedRecord
-
+                
                 cell.addButton.setImage(UIImage(systemName: "checkmark"), for: .normal)
                 cell.addButton.backgroundColor = tracker.color.withAlphaComponent(0.3)
                 cell.daysCount.text = "\(updatedDates.count) дней"
             }
         } else {
-            let newRecord = TrackerRecord(trackerId: tracker.id, date: [selectedDate])
+            let newRecord = TrackerRecord(trackerId: tracker.id, date: [selectedDate], firstComletionDate: selectedDate)
             completedTrackers.append(newRecord)
 
             cell.addButton.setImage(UIImage(systemName: "checkmark"), for: .normal)
@@ -313,7 +326,13 @@ extension TrackerListViewController: TrackerListDelegate {
 
 extension TrackerListViewController: AddTrackerDelegate {
     func didAddTracker(_ tracker: Tracker) {
-        categories[0].trackers.append(tracker)
+        guard !categories.isEmpty else { return }
+                let category = categories[0]
+                let newCategory = TrackerCategory(
+                    name: category.name,
+                    trackers: category.trackers + [tracker])
+        categories[0] = newCategory
         collectionView.reloadData()
+        hidePlaceholderView()
     }
 }

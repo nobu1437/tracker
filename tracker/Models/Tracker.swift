@@ -6,6 +6,7 @@ struct Tracker: Identifiable {
     let color: UIColor
     let emoji: String
     let schedule: Set<Weekday>
+    let isRegular: Bool
 }
 
 enum Weekday: CaseIterable, Hashable {
