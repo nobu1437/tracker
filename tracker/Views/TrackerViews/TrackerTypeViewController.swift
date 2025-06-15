@@ -46,10 +46,11 @@ final class TrackerTypeViewController: UIViewController {
     
     @objc private func addButtonTapped() {
         guard let text = textField.text else { return }
-            let tracker = Tracker(name: text,
-                                  color: .blue,
-                                  emoji: "🤪",
-                                  schedule: isRegular ? self.schedule : Set(arrayLiteral: .monday,.tuesday,.wednesday,.thursday,.friday,.saturday,.sunday))
+             let tracker = Tracker(name: text,
+                              color: .blue,
+                              emoji: "🤪",
+                              schedule: isRegular ? self.schedule : Set(arrayLiteral: .monday,.tuesday,.wednesday,.thursday,.friday,.saturday,.sunday), 
+                                   isRegular: isRegular ? true : false)
         delegate?.didAddTracker(tracker)
         dismiss(animated: true)
     }
