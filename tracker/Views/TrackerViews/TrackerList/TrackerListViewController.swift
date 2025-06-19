@@ -3,6 +3,7 @@ import UIKit
 final class TrackerListViewController: UIViewController{
     private let trackerCategoryStore = TrackerCategoryStore()
     private let trackerRecordStore = TrackerRecordStore()
+    private let trackerStore = TrackerStore()
     
     private lazy var collectionView = UICollectionView()
     private var currentDate = Date()
@@ -234,6 +235,7 @@ extension TrackerListViewController: UICollectionViewDataSource {
         cell.daysCount.text = "\(count) дней"
         return cell
     }
+    
     func collectionView(_ collectionView: UICollectionView,
                         viewForSupplementaryElementOfKind kind: String,
                         at indexPath: IndexPath) -> UICollectionReusableView {
@@ -260,19 +262,21 @@ extension TrackerListViewController: UICollectionViewDelegate {
         guard indexPaths.count > 0 else {
             return nil
         }
-        
-        let indexPath = indexPaths[0]
+        guard let indexPath = indexPaths.first, let cell = collectionView.cellForItem(at: indexPath) as? TrackerListCell else { return nil }
+        let tracker = visibleCategories[indexPath.section].trackers[indexPath.item]
         
         return UIContextMenuConfiguration(actionProvider: { actions in
             return UIMenu(children: [
                 UIAction(title: "Закрепить") { [weak self] _ in
-                    //                    self?.categories[indexPath.section].trackers[indexPath.item].isPinned.toggle()
-                },
-                UIAction(title: "Редактировать") { [weak self] _ in
                     
                 },
+                UIAction(title: "Редактировать") { [weak self] _ in
+//                    guard let self = self else { return }
+//                    self.didTapBackground(cell)
+                },
                 UIAction(title: "Удалить") { [weak self] _ in
-                    //                    self?.categories[indexPath.section].trackers.remove(at: indexPath.item)
+//                    guard let self = self else { return }
+//                    try? self.trackerStore.deleteTracker(tracker)
                 },
             ])
         })
@@ -280,6 +284,15 @@ extension TrackerListViewController: UICollectionViewDelegate {
 }
 
 extension TrackerListViewController: TrackerListDelegate {
+//    func didTapBackground(_ cell: TrackerListCell) {
+//        guard let indexPath = collectionView.indexPath(for: cell) else { return }
+//        let tracker = visibleCategories[indexPath.section].trackers[indexPath.item]
+//        let vc = TrackerEditViewController(tracker: tracker, countLabeltext: cell.daysCount.text ?? "0 дней")
+//        let nav = UINavigationController(rootViewController: vc)
+//        present(nav, animated: true)
+//        
+//    }
+    
     func didTapButton(_ cell: TrackerListCell) {
         print("tapTap")
         guard let indexPath = collectionView.indexPath(for: cell) else { return }
@@ -300,10 +313,17 @@ extension TrackerListViewController: TrackerListDelegate {
                     trackerRecordStore.updateExistingTrackerRecord(recordCoreData, with: TrackerRecord(trackerId: tracker.id, date: dates, firstComletionDate: newFirst))
                 }
             } else {
-                dates.append(selectedDate)
-                let newFirst = (record.firstComletionDate != nil) ? min(record.firstComletionDate!, selectedDate) : selectedDate
-                guard let recordCoreData = trackerRecordStore.findRecord(by: record.trackerId) else {return}
-                trackerRecordStore.updateExistingTrackerRecord(recordCoreData , with: TrackerRecord(trackerId: tracker.id, date: dates, firstComletionDate: newFirst))
+                if !dates.contains(selectedDate) {
+                    dates.append(selectedDate)
+                }
+                let newFirst: Date
+                if let firstCompletion = record.firstComletionDate {
+                    newFirst = min(firstCompletion, selectedDate)
+                } else {
+                    newFirst = selectedDate
+                }
+                guard let recordCoreData = trackerRecordStore.findRecord(by: record.trackerId) else { return }
+                trackerRecordStore.updateExistingTrackerRecord(recordCoreData, with: TrackerRecord(trackerId: tracker.id, date: dates, firstComletionDate: newFirst))
             }
         }
         else {

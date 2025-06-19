@@ -1,23 +1,33 @@
 import UIKit
 import CoreData
 
-class TrackerRecordStore: NSObject{
+final class TrackerRecordStore: NSObject{
     let context:NSManagedObjectContext
     
-    convenience override init() {
-        let delegate = UIApplication.shared.delegate as! AppDelegate
-        let context = delegate.persistentContainer.viewContext
-        try! self.init(context: context)
-    }
-    
-    private var fetchedResultsController: NSFetchedResultsController<TrackerRecordCoreData>!
+    private var fetchedResultsController: NSFetchedResultsController<TrackerRecordCoreData>?
     weak var delegate: TrackerRecordStoreDelegate?
     private var insertedIndexes: IndexSet?
     private var deletedIndexes: IndexSet?
     private var updatedIndexes: IndexSet?
     private var movedIndexes: Set<TrackerRecordStoreUpdate.Move>?
     
-    init(context: NSManagedObjectContext) throws {
+    override convenience init() {
+        let context: NSManagedObjectContext
+        if let delegate = UIApplication.shared.delegate as? AppDelegate {
+            context = delegate.persistentContainer.viewContext
+        } else {
+            let container = NSPersistentContainer(name: "tracker")
+            container.loadPersistentStores { _, error in
+                if let error = error {
+                    fatalError("Failed to load store: \(error)")
+                }
+            }
+            context = container.viewContext
+        }
+        self.init(context: context)
+    }
+    
+    init(context: NSManagedObjectContext) {
         self.context = context
         super.init()
         
@@ -33,12 +43,12 @@ class TrackerRecordStore: NSObject{
         )
         controller.delegate = self
         self.fetchedResultsController = controller
-        try controller.performFetch()
+        try? controller.performFetch()
     }
     
     var trackerRecords: [TrackerRecord] {
         guard
-            let objects = self.fetchedResultsController.fetchedObjects,
+            let objects = self.fetchedResultsController?.fetchedObjects,
             let trackerRecords = try? objects.map({ try self.trackerRecord(from: $0) })
         else { return [] }
         return trackerRecords
@@ -59,7 +69,7 @@ class TrackerRecordStore: NSObject{
         } else {
             let newRecord = TrackerRecordCoreData(context: context)
             newRecord.trackerId = trackerId
-            newRecord.date = [newDate.stripped()!] as NSObject
+            newRecord.date = [newDate.stripped()] as NSObject
             newRecord.firstComletionDate = firstCompletionDate
         }
         try context.save()
@@ -109,10 +119,13 @@ class TrackerRecordStore: NSObject{
         guard let date = trackerRecordCoreData.date else {
            throw TrackerRecordStoreError.decodingError
        }
+        guard let castedDate = date as? [Date] else {
+            throw TrackerRecordStoreError.decodingError
+        }
         guard let firstDate = trackerRecordCoreData.firstComletionDate else {
            throw TrackerRecordStoreError.decodingError
        }
-        return TrackerRecord(trackerId: id, date: date as! [Date], firstComletionDate: firstDate)
+        return TrackerRecord(trackerId: id, date: castedDate, firstComletionDate: firstDate)
     }
 }
 
@@ -128,10 +141,10 @@ extension TrackerRecordStore: NSFetchedResultsControllerDelegate {
         delegate?.store(
             self,
             didUpdate: TrackerRecordStoreUpdate(
-                insertedIndexes: insertedIndexes!,
-                deletedIndexes: deletedIndexes!,
-                updatedIndexes: updatedIndexes!,
-                movedIndexes: movedIndexes!
+                insertedIndexes: insertedIndexes ?? IndexSet(),
+                deletedIndexes: deletedIndexes ?? IndexSet(),
+                updatedIndexes: updatedIndexes ?? IndexSet(),
+                movedIndexes: movedIndexes ?? Set()
             )
         )
         insertedIndexes = nil

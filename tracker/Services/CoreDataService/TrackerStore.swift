@@ -1,9 +1,9 @@
 import UIKit
 import CoreData
 
-class TrackerStore: NSObject{
+final class TrackerStore: NSObject{
     let context:NSManagedObjectContext
-    private var fetchedResultsController: NSFetchedResultsController<TrackerCoreData>!
+    private var fetchedResultsController: NSFetchedResultsController<TrackerCoreData>?
     weak var delegate: TrackerStoreDelegate?
     private var insertedIndexes: IndexSet?
     private var deletedIndexes: IndexSet?
@@ -12,12 +12,23 @@ class TrackerStore: NSObject{
     
     let colorArray: [UIColor] = [._1,._2,._3,._4,._5,._6,._7,._8,._9,._10,._11,._12,._13,._14,._15,._16,._17,._18]
     
-    convenience override init() {
-        let delegate = UIApplication.shared.delegate as! AppDelegate
-        let context = delegate.persistentContainer.viewContext
-        try! self.init(context: context)
+    override convenience init() {
+        let context: NSManagedObjectContext
+        if let delegate = UIApplication.shared.delegate as? AppDelegate {
+            context = delegate.persistentContainer.viewContext
+        } else {
+            let container = NSPersistentContainer(name: "tracker")
+            container.loadPersistentStores { _, error in
+                if let error = error {
+                    fatalError("Failed to load store: \(error)")
+                }
+            }
+            context = container.viewContext
+        }
+        self.init(context: context)
     }
-    init(context: NSManagedObjectContext) throws {
+    
+    init(context: NSManagedObjectContext) {
         self.context = context
         super.init()
         
@@ -33,21 +44,43 @@ class TrackerStore: NSObject{
         )
         controller.delegate = self
         self.fetchedResultsController = controller
-        try controller.performFetch()
+        try? controller.performFetch()
     }
     
     var trackers: [Tracker] {
         guard
-            let objects = self.fetchedResultsController.fetchedObjects,
+            let objects = self.fetchedResultsController?.fetchedObjects,
             let trackers = try? objects.map({ try self.tracker(from: $0) })
         else { return [] }
         return trackers
+    }
+    
+    func deleteTracker(_ tracker: Tracker) throws {
+        guard let trackerCoreData = findTracker(by: tracker.id) else { return }
+        
+        context.delete(trackerCoreData)
+        try context.save()
+    }
+    
+    func findTracker(by trackerId: UUID) -> TrackerCoreData? {
+        let fetchRequest = TrackerCoreData.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "id == %@", trackerId as CVarArg)
+        fetchRequest.fetchLimit = 1
+        
+        do {
+            let results = try context.fetch(fetchRequest)
+            return results.first
+        } catch {
+            print("Ошибка поиска записи: \(error)")
+            return nil
+        }
     }
     
     func addNewTracker(_ tracker: Tracker, to categoryName: String) throws {
         let categoryFetchRequest = TrackerCategoryCoreData.fetchRequest()
         categoryFetchRequest.predicate = NSPredicate(format: "title == %@", categoryName)
         let categoryResults = try context.fetch(categoryFetchRequest)
+
         let category: TrackerCategoryCoreData
         if let existingCategory = categoryResults.first {
             category = existingCategory
@@ -56,7 +89,13 @@ class TrackerStore: NSObject{
             category.title = categoryName
         }
 
-        let trackerCoreData = TrackerCoreData(context: context)
+        let trackerCoreData: TrackerCoreData
+        if let existingTracker = findTracker(by: tracker.id) {
+            trackerCoreData = existingTracker
+        } else {
+            trackerCoreData = TrackerCoreData(context: context) 
+        }
+
         updateExistingTracker(trackerCoreData, with: tracker)
         trackerCoreData.category = category
 
@@ -91,11 +130,14 @@ class TrackerStore: NSObject{
         guard let schedule = trackerCoreData.schedule else {
             throw TrackerStoreError.decodingError
         }
+        guard let castedSchedule = schedule as? [Weekday] else {
+            throw TrackerStoreError.decodingError
+        }
         let isRegular = trackerCoreData.isRegular
         guard let id = trackerCoreData.id else {
             throw TrackerStoreError.decodingError
         }
-        return Tracker(id: id, name: name, color: color, emoji: emoji, schedule: schedule as! [Weekday], isRegular: isRegular)
+        return Tracker(id: id, name: name, color: color, emoji: emoji, schedule: castedSchedule, isRegular: isRegular)
     }
 }
 
@@ -111,10 +153,10 @@ extension TrackerStore: NSFetchedResultsControllerDelegate {
         delegate?.store(
             self,
             didUpdate: TrackerStoreUpdate(
-                insertedIndexes: insertedIndexes!,
-                deletedIndexes: deletedIndexes!,
-                updatedIndexes: updatedIndexes!,
-                movedIndexes: movedIndexes!
+                insertedIndexes: insertedIndexes ?? IndexSet(),
+                deletedIndexes: deletedIndexes ?? IndexSet(),
+                updatedIndexes: updatedIndexes ?? IndexSet(),
+                movedIndexes: movedIndexes ?? Set()
             )
         )
         insertedIndexes = nil

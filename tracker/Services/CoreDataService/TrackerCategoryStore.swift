@@ -1,44 +1,55 @@
 import UIKit
 import CoreData
 
-class TrackerCategoryStore: NSObject{
+final class TrackerCategoryStore: NSObject{
     let context:NSManagedObjectContext
     
-    convenience override init() {
-        let delegate = UIApplication.shared.delegate as! AppDelegate
-        let context = delegate.persistentContainer.viewContext
-        try! self.init(context: context)
-    }
     let trackerStore = TrackerStore()
-    private var fetchedResultsController: NSFetchedResultsController<TrackerCategoryCoreData>!
+    private var fetchedResultsController: NSFetchedResultsController<TrackerCategoryCoreData>?
     weak var delegate: TrackerCategoryStoreDelegate?
     private var insertedIndexes: IndexSet?
     private var deletedIndexes: IndexSet?
     private var updatedIndexes: IndexSet?
     private var movedIndexes: Set<TrackerCategoryStoreUpdate.Move>?
     
-    init(context: NSManagedObjectContext) throws {
-        self.context = context
-        super.init()
-        
-        let fetchRequest = TrackerCategoryCoreData.fetchRequest()
-        fetchRequest.sortDescriptors = [
-            NSSortDescriptor(keyPath: \TrackerCategoryCoreData.title, ascending: true)
-        ]
-        let controller = NSFetchedResultsController(
-            fetchRequest: fetchRequest,
-            managedObjectContext: context,
-            sectionNameKeyPath: nil,
-            cacheName: nil
-        )
-        controller.delegate = self
-        self.fetchedResultsController = controller
-        try controller.performFetch()
+    override convenience init() {
+        let context: NSManagedObjectContext
+        if let delegate = UIApplication.shared.delegate as? AppDelegate {
+            context = delegate.persistentContainer.viewContext
+        } else {
+            let container = NSPersistentContainer(name: "tracker")
+            container.loadPersistentStores { _, error in
+                if let error = error {
+                    fatalError("Failed to load store: \(error)")
+                }
+            }
+            context = container.viewContext
+        }
+        self.init(context: context)
+    }
+
+    init(context: NSManagedObjectContext) {
+            self.context = context
+            super.init()
+            
+            let fetchRequest = TrackerCategoryCoreData.fetchRequest()
+            fetchRequest.sortDescriptors = [
+                NSSortDescriptor(keyPath: \TrackerCategoryCoreData.title, ascending: true)
+            ]
+            let controller = NSFetchedResultsController(
+                fetchRequest: fetchRequest,
+                managedObjectContext: context,
+                sectionNameKeyPath: nil,
+                cacheName: nil
+            )
+            controller.delegate = self
+            self.fetchedResultsController = controller
+            try? controller.performFetch()
     }
     
     var trackerCategories: [TrackerCategory] {
         guard
-            let objects = self.fetchedResultsController.fetchedObjects,
+            let objects = self.fetchedResultsController?.fetchedObjects,
             let trackerRecords = try? objects.map({ try self.trackerCategory(from: $0) })
         else { return [] }
         return trackerRecords
@@ -125,10 +136,10 @@ extension TrackerCategoryStore: NSFetchedResultsControllerDelegate {
         delegate?.store(
             self,
             didUpdate: TrackerCategoryStoreUpdate(
-                insertedIndexes: insertedIndexes!,
-                deletedIndexes: deletedIndexes!,
-                updatedIndexes: updatedIndexes!,
-                movedIndexes: movedIndexes!
+                insertedIndexes: insertedIndexes ?? IndexSet(),
+                deletedIndexes: deletedIndexes ?? IndexSet(),
+                updatedIndexes: updatedIndexes ?? IndexSet(),
+                movedIndexes: movedIndexes ?? Set()
             )
         )
         insertedIndexes = nil
@@ -165,6 +176,7 @@ extension TrackerCategoryStore: NSFetchedResultsControllerDelegate {
 
 enum TrackerCategoryStoreError: Error {
     case decodingError
+    case delegateError(Error)
 }
 
 struct TrackerCategoryStoreUpdate {
