@@ -1,15 +1,23 @@
 import UIKit
 
 struct Tracker: Identifiable {
-    let id = UUID()
+    let id: UUID
     let name: String
     let color: UIColor
     let emoji: String
-    let schedule: Set<Weekday>
+    let schedule: [Weekday]
     let isRegular: Bool
+    init(id: UUID = UUID(), name: String, color: UIColor, emoji: String, schedule: [Weekday], isRegular: Bool) {
+        self.id = id
+        self.name = name
+        self.color = color
+        self.emoji = emoji
+        self.schedule = schedule
+        self.isRegular = isRegular
+    }
 }
 
-enum Weekday: CaseIterable, Hashable {
+public enum Weekday: CaseIterable, Hashable, Codable {
     case monday, tuesday, wednesday, thursday, friday, saturday, sunday
 
     var title: String {

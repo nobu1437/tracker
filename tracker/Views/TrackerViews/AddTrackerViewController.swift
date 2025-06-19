@@ -4,7 +4,6 @@ final class AddTrackerViewController: UIViewController {
     private let regularButton = UIButton()
     private  let irregularButton = UIButton()
     private var isRegular = false
-    weak var delegate: AddTrackerDelegate?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -46,13 +45,11 @@ final class AddTrackerViewController: UIViewController {
     @objc private func regularButtonTapped() {
         isRegular = true
         let vc = TrackerTypeViewController(isRegular: isRegular)
-        vc.delegate = delegate
         navigationController?.pushViewController(vc, animated: true)
     }
     @objc private func irregularButtonTapped() {
         isRegular = false
         let vc = TrackerTypeViewController(isRegular: isRegular)
-        vc.delegate = delegate
         navigationController?.pushViewController(vc, animated: true)
     }
 }

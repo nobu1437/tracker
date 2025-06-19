@@ -4,12 +4,12 @@ final class ScheduleViewController: UIViewController {
     
     let tableView = UITableView()
     let readyButton = UIButton()
-    var schedule:Set<Weekday>
-    var onSchedulePicked: ((Set<Weekday>) -> Void)?
+    var schedule:[Weekday]
+    var onSchedulePicked: (([Weekday]) -> Void)?
     
     let week = ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"]
     
-    init(schedule:Set<Weekday>) {
+    init(schedule:[Weekday]) {
         self.schedule = schedule
         super.init(nibName: nil, bundle: nil)
     }
@@ -99,9 +99,9 @@ extension ScheduleViewController: UITableViewDataSource {
         print("cellForRowAt", indexPath.row)
         cell.switchChanged = { [weak self] isOn in
             if isOn {
-                self?.schedule.insert(weekday)
+                self?.schedule.append(weekday)
             } else {
-                self?.schedule.remove(weekday)
+                self?.schedule.remove(at: self?.schedule.firstIndex(of: weekday) ?? 0)
             }
         }
         return cell
@@ -112,9 +112,9 @@ extension ScheduleViewController: UITableViewDelegate {
         
         let weekday = Weekday.allCases[indexPath.row]
         if schedule.contains(weekday) {
-            schedule.remove(weekday)
+            self.schedule.remove(at: self.schedule.firstIndex(of: weekday) ?? 0)
         } else {
-            schedule.insert(weekday)
+            schedule.append(weekday)
         }
         
         tableView.reloadRows(at: [indexPath], with: .automatic)
