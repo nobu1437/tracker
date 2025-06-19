@@ -31,8 +31,6 @@ final class TrackerListViewController: UIViewController{
     }
     
     private func isTrackerVisible(_ tracker: Tracker, weekday: Weekday, selectedDate: Date) -> Bool {
-        
-        
         if tracker.isRegular {
             return tracker.schedule.contains(weekday)
         } else if let completed = completedTrackers.first(where: { $0.trackerId == tracker.id }) {
@@ -41,7 +39,6 @@ final class TrackerListViewController: UIViewController{
             return true
         }
     }
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         trackerCategoryStore.delegate = self
@@ -178,6 +175,7 @@ final class TrackerListViewController: UIViewController{
             emptyLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16)
         ])
     }
+    
 }
 
 extension TrackerListViewController: UISearchBarDelegate {
@@ -213,7 +211,7 @@ extension TrackerListViewController: UICollectionViewDataSource {
         }
         
         var isCompletedToday = false
-
+        
         for completedTracker in completedTrackers {
             if completedTracker.trackerId == tracker.id,
                completedTracker.date.contains(where: { $0.stripped() == datePicker.date.stripped() }) {
@@ -221,8 +219,8 @@ extension TrackerListViewController: UICollectionViewDataSource {
                 break
             }
         }
-            cell.addButton.setImage(UIImage(systemName: isCompletedToday ? "checkmark": "plus"), for: .normal)
-            cell.addButton.backgroundColor = tracker.color.withAlphaComponent(isCompletedToday ? 0.3 : 1)
+        cell.addButton.setImage(UIImage(systemName: isCompletedToday ? "checkmark": "plus"), for: .normal)
+        cell.addButton.backgroundColor = tracker.color.withAlphaComponent(isCompletedToday ? 0.3 : 1)
         
         cell.titleLabel.text = "\(tracker.name)"
         cell.backgroundColorView.backgroundColor = tracker.color
