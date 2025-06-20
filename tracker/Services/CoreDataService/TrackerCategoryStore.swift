@@ -113,6 +113,15 @@ final class TrackerCategoryStore: NSObject{
         trackerCategoryCoreData.title = trackerCategory.name
     }
     
+    func findCategoryName(for tracker: Tracker) -> String? {
+        for category in trackerCategories {
+            if category.trackers.contains(where: { $0.id == tracker.id }) {
+                return category.name
+            }
+        }
+        return nil
+    }
+    
     func trackerCategory(from trackerCategoryCoreData: TrackerCategoryCoreData) throws -> TrackerCategory {
         guard let name = trackerCategoryCoreData.title else {
             throw TrackerCategoryStoreError.decodingError

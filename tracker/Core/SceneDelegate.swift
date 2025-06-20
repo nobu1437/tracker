@@ -15,37 +15,42 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         window = UIWindow(windowScene: windowScene)
-        let tabBar = UITabBarController()
-        let appearance = UITabBarAppearance()
-        appearance.configureWithDefaultBackground()
-        appearance.backgroundColor = .ypWhite
-        if #available(iOS 15.0, *) {
-            tabBar.tabBar.scrollEdgeAppearance = appearance
+        let isNotFirstLaunch = UserDefaults.standard.bool(forKey: "isNotFirstLauch")
+        if isNotFirstLaunch {
+            let tabBar = UITabBarController()
+            let appearance = UITabBarAppearance()
+            appearance.configureWithDefaultBackground()
+            appearance.backgroundColor = .ypWhite
+            if #available(iOS 15.0, *) {
+                tabBar.tabBar.scrollEdgeAppearance = appearance
+            }
+            tabBar.tabBar.standardAppearance = appearance
+            let navAppearance = UINavigationBarAppearance()
+            navAppearance.titleTextAttributes = [
+                .font: UIFont.systemFont(ofSize: 16,weight: .medium),
+                .foregroundColor: UIColor.black ]
+            navAppearance.shadowColor = .clear
+            navAppearance.backgroundColor = .ypWhite
+            
+            UINavigationBar.appearance().standardAppearance = navAppearance
+            UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
+            let statisticVC = StatisticListViewController()
+            let statisticNavVC = UINavigationController(rootViewController: statisticVC)
+            statisticNavVC.tabBarItem = UITabBarItem(title: "Статистика",
+                                                     image: UIImage(systemName:
+                                                                        "hare.fill"),
+                                                     tag: 0)
+            let trackerVC = TrackerListViewController()
+            let trackerNavVC = UINavigationController(rootViewController: trackerVC)
+            trackerNavVC.tabBarItem = UITabBarItem(title: "Трекеры",
+                                                   image: UIImage(systemName:
+                                                                    "record.circle.fill"),
+                                                   tag: 1)
+            tabBar.setViewControllers([trackerNavVC,statisticNavVC], animated: true)
+            window?.rootViewController = tabBar
+        } else {
+            window?.rootViewController = PageViewController()
         }
-        tabBar.tabBar.standardAppearance = appearance
-        let navAppearance = UINavigationBarAppearance()
-        navAppearance.titleTextAttributes = [
-            .font: UIFont.systemFont(ofSize: 16,weight: .medium),
-            .foregroundColor: UIColor.black ]
-        navAppearance.shadowColor = .clear
-        navAppearance.backgroundColor = .ypWhite
-        
-        UINavigationBar.appearance().standardAppearance = navAppearance
-        UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
-        let statisticVC = StatisticListViewController()
-        let statisticNavVC = UINavigationController(rootViewController: statisticVC)
-        statisticNavVC.tabBarItem = UITabBarItem(title: "Статистика",
-                                              image: UIImage(systemName:
-                                                                "hare.fill"),
-                                              tag: 0)
-        let trackerVC = TrackerListViewController()
-        let trackerNavVC = UINavigationController(rootViewController: trackerVC)
-        trackerNavVC.tabBarItem = UITabBarItem(title: "Трекеры",
-                                            image: UIImage(systemName:
-                                                            "record.circle.fill"),
-                                            tag: 1)
-        tabBar.setViewControllers([trackerNavVC,statisticNavVC], animated: true)
-        window?.rootViewController = tabBar
         window?.makeKeyAndVisible()
     }
 

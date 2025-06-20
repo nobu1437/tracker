@@ -1,6 +1,6 @@
 import UIKit
 
-final class TrackerTypeViewController: UIViewController {
+final class TrackerEditViewController: UIViewController {
     private let trackerCategoryStore = TrackerCategoryStore()
     private let trackerStore = TrackerStore()
     private var schedule: [Weekday] = []
@@ -9,21 +9,34 @@ final class TrackerTypeViewController: UIViewController {
     private let colorArray: [UIColor]
     
     private let categoryNames = ["Emoji","Цвет"]
-    private var checkedEmoji: String?
-    private var checkedCategory: String?
-    private var checkedColor: UIColor?
+    private var checkedEmoji: String
+    private var checkedColor: UIColor
+    private var countLabel = UILabel()
     private let textField = UITextField()
     private let deleteButton = UIButton()
     private let addButton = UIButton()
     private let tableView = UITableView()
     private let bottomStack = UIStackView()
+    private let errorLabel = UILabel()
     private lazy var collectionView = UICollectionView()
+    private var isRegular: Bool
+    private let stackView = UIStackView()
     
-    var isRegular: Bool
+    var tracker: Tracker
+    var category: String?
+    var countLabelText: String
     
-    init(isRegular: Bool) {
-        self.isRegular = isRegular
+    init(tracker: Tracker, countLabeltext:String) {
         colorArray = trackerStore.colorArray
+        self.tracker = tracker
+        self.countLabelText = countLabeltext
+        self.isRegular = tracker.isRegular
+        self.category = trackerCategoryStore.findCategoryName(for: tracker)
+        self.schedule = tracker.schedule
+        self.textField.text = tracker.name
+        self.checkedEmoji = tracker.emoji
+        self.checkedColor = colorArray[trackerStore.findColorId(by: tracker.id)]
+        print(checkedColor)
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -36,15 +49,12 @@ final class TrackerTypeViewController: UIViewController {
         textField.delegate = self
         setupUI()
     }
+    override func viewWillAppear(_ animated: Bool) {
+        checkButtonVisibility()
+    }
     
     @objc private func categoryButtonTapped() {
-        let categoryVC = CategoryViewController(checkedCategory: checkedCategory)
-        categoryVC.categoriesPicked = { [weak self] category in
-            self?.checkedCategory = category
-            print("Выбрана категория: \(self?.checkedCategory)")
-            self?.tableView.reloadRows(at: [IndexPath(row: 0, section: 0)], with: .automatic)
-        }
-        navigationController?.pushViewController(categoryVC, animated: true)
+        
     }
     
     @objc private func scheduleButtonTapped() {
@@ -63,20 +73,23 @@ final class TrackerTypeViewController: UIViewController {
     @objc private func addButtonTapped() {
         print("buttonTapped")
         guard let text = textField.text else { return }
-        guard let checkedEmoji = checkedEmoji else { return }
-        guard let checkedColor = checkedColor else { return }
         
-        let tracker = Tracker(name: text,
+        let tracker = Tracker(id: self.tracker.id,
+                              name: text,
                               color: checkedColor,
                               emoji: checkedEmoji,
                               schedule: isRegular ? self.schedule : [.monday,.tuesday,.wednesday,.thursday,.friday,.saturday,.sunday], isRegular: isRegular ? true : false)
         
-        let categoryName = checkedCategory ?? "Новая категория"
+        let categoryName = category ?? "Новая категория"
         try? trackerStore.addNewTracker(tracker, to: categoryName)
         dismiss(animated: true)
     }
     
     @objc private func textFieldDidChange(){
+        checkButtonVisibility()
+    }
+    
+    private func checkButtonVisibility(){
         if let text = textField.text, text.count >= 1 {
             addButton.isUserInteractionEnabled = true
             addButton.backgroundColor = .ypBlack
@@ -85,15 +98,27 @@ final class TrackerTypeViewController: UIViewController {
             addButton.backgroundColor = .ypGray
         }
     }
-    
     private func  setupUI(){
         navigationItem.hidesBackButton = true
         view.backgroundColor = .ypWhite
-        title = isRegular ? "Новая привычка" : "Новое нерегулярное событие"
-        setupTextField()
-        setupBottomStackView()
+        title = "Редактирование Привычки"
+        setupCountLabel()
+        setupTextFieldStack()
         setupTableView()
+        setupBottomStackView()
         setupCollectionView()
+    }
+    
+    private func setupCountLabel(){
+        countLabel.text = countLabelText
+        countLabel.font = .systemFont(ofSize: 32, weight: .bold)
+        countLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(countLabel)
+        NSLayoutConstraint.activate([
+            countLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
+            countLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            countLabel.heightAnchor.constraint(equalToConstant: 38)
+        ])
     }
     
     private func setupCollectionView() {
@@ -123,6 +148,7 @@ final class TrackerTypeViewController: UIViewController {
         layout.headerReferenceSize = CGSize(width: UIScreen.main.bounds.width, height: 18)
         return UICollectionView(frame: .zero, collectionViewLayout: layout)
     }
+    
     private func  setupTableView() {
         tableView.dataSource = self
         tableView.delegate = self
@@ -136,13 +162,13 @@ final class TrackerTypeViewController: UIViewController {
         tableView.register(TrackerTypeCell.self, forCellReuseIdentifier: "cell")
         view.addSubview(tableView)
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: textField.bottomAnchor,constant: 24),
             tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor,constant: 16),
             tableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor,constant: -16),
-            tableView.heightAnchor.constraint(equalToConstant: isRegular ? 150 : 75)
+            tableView.heightAnchor.constraint(equalToConstant: isRegular ? 150 : 75),
+            tableView.topAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 24)
         ])
     }
-    private  func  setupTextField() {
+    private func setupTextFieldStack() {
         textField.backgroundColor = .ypBackground
         textField.placeholder = "Введите название трекера"
         textField.layer.cornerRadius = 20
@@ -151,13 +177,29 @@ final class TrackerTypeViewController: UIViewController {
         textField.leftViewMode = .always
         textField.addTarget(self, action: #selector(textFieldDidChange), for: .editingChanged)
         textField.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(textField)
+        errorLabel.textColor = .selection1
+        errorLabel.font = .systemFont(ofSize: 17, weight: .regular)
+        errorLabel.text = "Ограничение 38 символов"
+        errorLabel.translatesAutoresizingMaskIntoConstraints = false
+        errorLabel.isHidden = true
+        errorLabel.textAlignment = .center
+        stackView.addArrangedSubview(textField)
+        stackView.addArrangedSubview(errorLabel)
+        stackView.axis = .vertical
+        stackView.spacing = 8
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(stackView)
         NSLayoutConstraint.activate([
-            textField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-            textField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
-            textField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
-            textField.heightAnchor.constraint(equalToConstant: 75)
+            stackView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+            stackView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+            stackView.heightAnchor.constraint(greaterThanOrEqualToConstant: 75),
+            stackView.topAnchor.constraint(equalTo: countLabel.bottomAnchor, constant: 40)
         ])
+    }
+    
+   @objc func changeErrorVisibillity(){
+        errorLabel.isHidden = true
+        view.layoutIfNeeded()
     }
     
     private func  setupBottomStackView() {
@@ -196,15 +238,27 @@ final class TrackerTypeViewController: UIViewController {
         addButton.backgroundColor = .ypGray
         addButton.layer.cornerRadius = 16
         addButton.translatesAutoresizingMaskIntoConstraints = false
-        addButton.isUserInteractionEnabled = false
     }
 }
-extension TrackerTypeViewController: UITextFieldDelegate {
+extension TrackerEditViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
     }
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        let currentText = textField.text ?? ""
+        guard let stringRange = Range(range, in: currentText) else { return false }
+        let updatedText = currentText.replacingCharacters(in: stringRange, with: string)
+        let isTooLong = updatedText.count > 36
+        if isTooLong{
+            errorLabel.isHidden = false
+            view.layoutIfNeeded()
+            Timer.scheduledTimer(timeInterval: 2, target: self, selector: #selector(changeErrorVisibillity), userInfo: nil, repeats: false)
+        }
+        return updatedText.count <= 36
+    }
 }
-extension TrackerTypeViewController:UITableViewDataSource {
+
+extension TrackerEditViewController:UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if isRegular{
             return 2
@@ -220,20 +274,17 @@ extension TrackerTypeViewController:UITableViewDataSource {
         }
         if indexPath.row == 0 {
             cell.titleLabel.text = "Категория"
-            if let category = checkedCategory{
-                cell.subtitleLabel.text = category
-                cell.subtitleLabel.isHidden = false
-            }
-            else {
-                cell.subtitleLabel.text = ""
-                cell.subtitleLabel.isHidden = true
-            }
+            cell.subtitleLabel.text = category
         } else {
             cell.titleLabel.text = "Расписание"
             if schedule.isEmpty{
                 cell.subtitleLabel.isHidden = true
             } else {
-                cell.subtitleLabel.text = schedule.map{$0.shortTitle}.joined(separator: ", ")
+                if schedule.count == 7 {
+                    cell.subtitleLabel.text = "Каждый день"
+                } else {
+                    cell.subtitleLabel.text = schedule.map{$0.shortTitle}.joined(separator: ", ")
+                }
             }
         }
         if indexPath.row == (isRegular ? 1 : 0) {
@@ -246,16 +297,14 @@ extension TrackerTypeViewController:UITableViewDataSource {
         return 75
     }
 }
-extension TrackerTypeViewController:UITableViewDelegate {
+extension TrackerEditViewController:UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if indexPath.row == 1 {
             scheduleButtonTapped()
-        } else {
-            categoryButtonTapped()
         }
     }
 }
-extension TrackerTypeViewController: UICollectionViewDataSource{
+extension TrackerEditViewController: UICollectionViewDataSource{
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         18
     }
@@ -277,6 +326,9 @@ extension TrackerTypeViewController: UICollectionViewDataSource{
             }
             cell.colorView.backgroundColor = colorArray[indexPath.item]
             let isSelected = colorArray[indexPath.item] == checkedColor
+            print (colorArray[indexPath.item])
+            print (checkedColor)
+            print (isSelected)
             cell.borderView.layer.borderWidth = isSelected ? 3 : 0
             cell.borderView.layer.borderColor = isSelected ? colorArray[indexPath.item].cgColor : UIColor.clear.cgColor
             
@@ -310,7 +362,7 @@ extension TrackerTypeViewController: UICollectionViewDataSource{
     }
 }
 
-extension TrackerTypeViewController: UICollectionViewDelegate{
+extension TrackerEditViewController: UICollectionViewDelegate{
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if indexPath.section == 0 {
             checkedEmoji = emojiArray[indexPath.item]
