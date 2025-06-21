@@ -47,9 +47,9 @@ final class TrackerListCell: UICollectionViewCell {
         contentView.addSubview(addButton)
         addButton.addTarget(self, action: #selector(didTapButton), for: .touchUpInside)
         
-//        let tap = UITapGestureRecognizer(target: self, action: #selector(backgroundTapped))
-//        backgroundColorView.isUserInteractionEnabled = true
-//        backgroundColorView.addGestureRecognizer(tap)
+        let tap = UITapGestureRecognizer(target: self, action: #selector(backgroundTapped))
+        backgroundColorView.isUserInteractionEnabled = true
+        backgroundColorView.addGestureRecognizer(tap)
         
         setupConstraints()
     }
@@ -89,7 +89,7 @@ final class TrackerListCell: UICollectionViewCell {
     @objc func didTapButton() {
         delegate?.didTapButton(self)
     }
-//    @objc func backgroundTapped(){
-//        delegate?.didTapBackground(self)
-//    }
+    @objc func backgroundTapped(){
+        delegate?.didTapBackground(self)
+    }
 }

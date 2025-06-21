@@ -10,7 +10,7 @@ final class TrackerStore: NSObject{
     private var updatedIndexes: IndexSet?
     private var movedIndexes: Set<TrackerStoreUpdate.Move>?
     
-    let colorArray: [UIColor] = [._1,._2,._3,._4,._5,._6,._7,._8,._9,._10,._11,._12,._13,._14,._15,._16,._17,._18]
+    let colorArray: [UIColor] = [.selection1,.selection2,.selection3,.selection4,.selection5,.selection6,.selection7,.selection8,.selection9,.selection10,.selection11,.selection12,.selection13,.selection14,.selection15,.selection16,.selection17,.selection18]
     
     override convenience init() {
         let context: NSManagedObjectContext
@@ -61,7 +61,20 @@ final class TrackerStore: NSObject{
         context.delete(trackerCoreData)
         try context.save()
     }
-    
+    func findColorId(by trackerID: UUID) -> Int{
+        let fetchRequest = TrackerCoreData.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "id == %@", trackerID as CVarArg)
+        fetchRequest.fetchLimit = 1
+        
+        do{
+            let results = try context.fetch(fetchRequest)
+            guard let index = results.first?.colorIndex else { return 0 }
+            return Int(index)
+        } catch{
+            print("Ошибка поиска записи: \(error)")
+            return 0
+        }
+    }
     func findTracker(by trackerId: UUID) -> TrackerCoreData? {
         let fetchRequest = TrackerCoreData.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "id == %@", trackerId as CVarArg)

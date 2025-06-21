@@ -11,8 +11,9 @@ final class TrackerListViewController: UIViewController{
     private var datePicker = UIDatePicker()
     private var titleLabel = UILabel()
     private var searchBar = UISearchBar()
-    private var imageView = UIImageView()
-    private var emptyLabel = UILabel()
+    private var placeholderImageView = UIImageView()
+    private var placeholderLabel = UILabel()
+    private var currentSearchText: String = ""
     
     private var completedTrackers: [TrackerRecord]{
         trackerRecordStore.trackerRecords
@@ -25,7 +26,12 @@ final class TrackerListViewController: UIViewController{
         guard let selectedDate = currentDate.stripped() else { return [] }
         return categories
             .map { category in
-                let trackers = category.trackers.filter { isTrackerVisible($0, weekday: weekday, selectedDate: selectedDate) }
+                let trackers = category.trackers.filter { tracker in
+                    let matchesSchedule = isTrackerVisible(tracker, weekday: weekday, selectedDate: selectedDate)
+                    let matchesSearch = currentSearchText.isEmpty ||
+                    tracker.name.lowercased().contains(currentSearchText.lowercased())
+                    return matchesSchedule && matchesSearch
+                }
                 return TrackerCategory(name: category.name, trackers: trackers)
             }
             .filter { !$0.trackers.isEmpty }
@@ -44,7 +50,11 @@ final class TrackerListViewController: UIViewController{
         super.viewDidLoad()
         trackerCategoryStore.delegate = self
         trackerRecordStore.delegate = self
+        trackerStore.delegate = self
         setupUI()
+    }
+    override func viewWillAppear(_ animated: Bool) {
+        collectionView.reloadData()
     }
     override func viewDidAppear(_ animated: Bool) {
         hidePlaceholderView()
@@ -83,11 +93,11 @@ final class TrackerListViewController: UIViewController{
     
     private func hidePlaceholderView() {
         if !visibleCategories.isEmpty {
-            imageView.isHidden = true
-            emptyLabel.isHidden = true
+            placeholderImageView.isHidden = true
+            placeholderLabel.isHidden = true
         } else {
-            imageView.isHidden = false
-            emptyLabel.isHidden = false
+            placeholderImageView.isHidden = false
+            placeholderLabel.isHidden = false
         }
     }
     
@@ -153,27 +163,27 @@ final class TrackerListViewController: UIViewController{
     }
     
     private func setupImageView() {
-        imageView.image = UIImage(resource: .noTracked)
-        view.addSubview(imageView)
-        imageView.translatesAutoresizingMaskIntoConstraints = false
+        placeholderImageView.image = UIImage(resource: .noTracked)
+        view.addSubview(placeholderImageView)
+        placeholderImageView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            imageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            imageView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            imageView.widthAnchor.constraint(equalToConstant: 80),
-            imageView.heightAnchor.constraint(equalToConstant: 80)
+            placeholderImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            placeholderImageView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            placeholderImageView.widthAnchor.constraint(equalToConstant: 80),
+            placeholderImageView.heightAnchor.constraint(equalToConstant: 80)
         ])
     }
     
     private  func setupEmptyLabel() {
-        emptyLabel.text = "Что будем отслеживать?"
-        emptyLabel.font = .systemFont(ofSize: 12, weight: .medium)
-        emptyLabel.textAlignment = .center
-        view.addSubview(emptyLabel)
-        emptyLabel.translatesAutoresizingMaskIntoConstraints = false
+        placeholderLabel.text = "Что будем отслеживать?"
+        placeholderLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        placeholderLabel.textAlignment = .center
+        view.addSubview(placeholderLabel)
+        placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            emptyLabel.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 8),
-            emptyLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-            emptyLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16)
+            placeholderLabel.topAnchor.constraint(equalTo: placeholderImageView.bottomAnchor, constant: 8),
+            placeholderLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+            placeholderLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16)
         ])
     }
     
@@ -184,7 +194,16 @@ extension TrackerListViewController: UISearchBarDelegate {
         searchBar.resignFirstResponder()
     }
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        //логика фильтрации
+        currentSearchText = searchText
+        collectionView.reloadData()
+        if currentSearchText.isEmpty{
+            placeholderLabel.text = "Что будем отслеживать?"
+            placeholderImageView.image = UIImage(resource: .noTracked)
+        } else {
+            placeholderLabel.text = visibleCategories.isEmpty ? "Ничего не найдено" : "Что будем отслеживать?"
+            placeholderImageView.image = UIImage(resource: visibleCategories.isEmpty ? .think : .noTracked)
+        }
+        hidePlaceholderView()
     }
 }
 
@@ -271,12 +290,12 @@ extension TrackerListViewController: UICollectionViewDelegate {
                     
                 },
                 UIAction(title: "Редактировать") { [weak self] _ in
-//                    guard let self = self else { return }
-//                    self.didTapBackground(cell)
+                    guard let self = self else { return }
+                    self.didTapBackground(cell)
                 },
                 UIAction(title: "Удалить") { [weak self] _ in
-//                    guard let self = self else { return }
-//                    try? self.trackerStore.deleteTracker(tracker)
+                    guard let self = self else { return }
+                    try? self.trackerStore.deleteTracker(tracker)
                 },
             ])
         })
@@ -284,14 +303,14 @@ extension TrackerListViewController: UICollectionViewDelegate {
 }
 
 extension TrackerListViewController: TrackerListDelegate {
-//    func didTapBackground(_ cell: TrackerListCell) {
-//        guard let indexPath = collectionView.indexPath(for: cell) else { return }
-//        let tracker = visibleCategories[indexPath.section].trackers[indexPath.item]
-//        let vc = TrackerEditViewController(tracker: tracker, countLabeltext: cell.daysCount.text ?? "0 дней")
-//        let nav = UINavigationController(rootViewController: vc)
-//        present(nav, animated: true)
-//        
-//    }
+    func didTapBackground(_ cell: TrackerListCell) {
+        guard let indexPath = collectionView.indexPath(for: cell) else { return }
+        let tracker = visibleCategories[indexPath.section].trackers[indexPath.item]
+        let vc = TrackerEditViewController(tracker: tracker, countLabeltext: cell.daysCount.text ?? "0 дней")
+        let nav = UINavigationController(rootViewController: vc)
+        present(nav, animated: true)
+        
+    }
     
     func didTapButton(_ cell: TrackerListCell) {
         print("tapTap")
@@ -342,6 +361,12 @@ extension TrackerListViewController: TrackerCategoryStoreDelegate {
 }
 extension TrackerListViewController: TrackerRecordStoreDelegate {
     func store(_ store: TrackerRecordStore, didUpdate update: TrackerRecordStoreUpdate) {
+        collectionView.reloadData()
+        hidePlaceholderView()
+    }
+}
+extension TrackerListViewController: TrackerStoreDelegate {
+    func store(_ store: TrackerStore, didUpdate update: TrackerStoreUpdate) {
         collectionView.reloadData()
         hidePlaceholderView()
     }
