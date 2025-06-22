@@ -1,0 +1,6 @@
+framework module Pods_trackerTests {
+  umbrella header "Pods-trackerTests-umbrella.h"
+
+  export *
+  module * { export * }
+}

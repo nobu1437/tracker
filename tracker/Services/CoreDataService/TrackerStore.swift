@@ -75,6 +75,15 @@ final class TrackerStore: NSObject{
             return 0
         }
     }
+    func togglePin(for tracker: Tracker) {
+        guard let trackerCoreData = findTracker(by: tracker.id) else { return }
+        trackerCoreData.isPinned.toggle()
+        do {
+            try context.save()
+        } catch {
+            print("Ошибка при сохранении isPinned: \(error)")
+        }
+    }
     func findTracker(by trackerId: UUID) -> TrackerCoreData? {
         let fetchRequest = TrackerCoreData.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "id == %@", trackerId as CVarArg)
@@ -121,6 +130,7 @@ final class TrackerStore: NSObject{
         trackerCoreData.schedule = tracker.schedule as NSObject
         trackerCoreData.isRegular = tracker.isRegular
         trackerCoreData.emoji = tracker.emoji
+        trackerCoreData.isPinned = tracker.isPinned
         
         if let colorIndex = colorArray.firstIndex(of: tracker.color) {
             trackerCoreData.colorIndex = Int16(colorIndex)
@@ -150,7 +160,9 @@ final class TrackerStore: NSObject{
         guard let id = trackerCoreData.id else {
             throw TrackerStoreError.decodingError
         }
-        return Tracker(id: id, name: name, color: color, emoji: emoji, schedule: castedSchedule, isRegular: isRegular)
+         let isPinned = trackerCoreData.isPinned
+        
+        return Tracker(id: id, name: name, color: color, emoji: emoji, schedule: castedSchedule, isRegular: isRegular, isPinned: isPinned)
     }
 }
 

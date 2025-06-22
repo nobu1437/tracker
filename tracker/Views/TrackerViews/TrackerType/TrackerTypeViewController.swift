@@ -69,7 +69,7 @@ final class TrackerTypeViewController: UIViewController {
         let tracker = Tracker(name: text,
                               color: checkedColor,
                               emoji: checkedEmoji,
-                              schedule: isRegular ? self.schedule : [.monday,.tuesday,.wednesday,.thursday,.friday,.saturday,.sunday], isRegular: isRegular ? true : false)
+                              schedule: isRegular ? self.schedule : [.monday,.tuesday,.wednesday,.thursday,.friday,.saturday,.sunday], isRegular: isRegular ? true : false, isPinned: false)
         
         let categoryName = checkedCategory ?? "Новая категория"
         try? trackerStore.addNewTracker(tracker, to: categoryName)

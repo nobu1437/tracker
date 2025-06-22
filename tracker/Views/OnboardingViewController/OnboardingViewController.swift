@@ -19,7 +19,7 @@ class OnboardingViewController: UIViewController{
        let button = UIButton()
         button.backgroundColor = .black
         button.layer.cornerRadius = 16
-        button.setTitle("Вот это технологии", for: .normal)
+        button.setTitle(NSLocalizedString("onboarding.button.title", comment: ""), for: .normal)
         button.setTitleColor(.white, for: .normal)
         return button
     }()
@@ -45,7 +45,7 @@ class OnboardingViewController: UIViewController{
         button.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(button)
         
-        label.text = isFirst ? "Отслеживайте только то, что хотите" : "Даже если это не литры воды и йога"
+        label.text = NSLocalizedString( isFirst ? "onboarding.page1.text" : "onboarding.page2.text", comment: "")
         label.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(label)
 
@@ -86,13 +86,13 @@ class OnboardingViewController: UIViewController{
         UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
         let statisticVC = StatisticListViewController()
         let statisticNavVC = UINavigationController(rootViewController: statisticVC)
-        statisticNavVC.tabBarItem = UITabBarItem(title: "Статистика",
+        statisticNavVC.tabBarItem = UITabBarItem(title: NSLocalizedString("tabbar.statistics.title", comment: ""),
                                               image: UIImage(systemName:
                                                                 "hare.fill"),
                                               tag: 0)
         let trackerVC = TrackerListViewController()
         let trackerNavVC = UINavigationController(rootViewController: trackerVC)
-        trackerNavVC.tabBarItem = UITabBarItem(title: "Трекеры",
+        trackerNavVC.tabBarItem = UITabBarItem(title: NSLocalizedString("tabbar.trackers.title", comment: ""),
                                             image: UIImage(systemName:
                                                             "record.circle.fill"),
                                             tag: 1)

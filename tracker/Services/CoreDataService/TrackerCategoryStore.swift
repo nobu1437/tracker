@@ -27,24 +27,24 @@ final class TrackerCategoryStore: NSObject{
         }
         self.init(context: context)
     }
-
+    
     init(context: NSManagedObjectContext) {
-            self.context = context
-            super.init()
-            
-            let fetchRequest = TrackerCategoryCoreData.fetchRequest()
-            fetchRequest.sortDescriptors = [
-                NSSortDescriptor(keyPath: \TrackerCategoryCoreData.title, ascending: true)
-            ]
-            let controller = NSFetchedResultsController(
-                fetchRequest: fetchRequest,
-                managedObjectContext: context,
-                sectionNameKeyPath: nil,
-                cacheName: nil
-            )
-            controller.delegate = self
-            self.fetchedResultsController = controller
-            try? controller.performFetch()
+        self.context = context
+        super.init()
+        
+        let fetchRequest = TrackerCategoryCoreData.fetchRequest()
+        fetchRequest.sortDescriptors = [
+            NSSortDescriptor(keyPath: \TrackerCategoryCoreData.title, ascending: true)
+        ]
+        let controller = NSFetchedResultsController(
+            fetchRequest: fetchRequest,
+            managedObjectContext: context,
+            sectionNameKeyPath: nil,
+            cacheName: nil
+        )
+        controller.delegate = self
+        self.fetchedResultsController = controller
+        try? controller.performFetch()
     }
     
     var trackerCategories: [TrackerCategory] {
@@ -60,7 +60,12 @@ final class TrackerCategoryStore: NSObject{
         updateExistingTrackerCategory(trackerCategoryCoreData, with: trackerCategory)
         try context.save()
     }
-    
+    func deleteCategory(_ category: String) throws {
+        guard let trackerCategoryCoreData = findCategoryCoreData(by: category) else { return }
+        
+        context.delete(trackerCategoryCoreData)
+        try context.save()
+    }
     func findCategory(by name: String) -> TrackerCategory? {
         let fetchRequest = TrackerCategoryCoreData.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "title == %@", name)
@@ -75,7 +80,16 @@ final class TrackerCategoryStore: NSObject{
             return nil
         }
     }
-
+    func findCategoryCoreData(by name: String) -> TrackerCategoryCoreData? {
+        let fetchRequest = TrackerCategoryCoreData.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "title == %@", name)
+        fetchRequest.fetchLimit = 1
+        
+        let results = try? context.fetch(fetchRequest)
+        guard let categoryCoreData = results?.first else { return nil }
+        return categoryCoreData
+    }
+    
     func addTrackerToCategory(_ tracker: Tracker, categoryName: String) throws {
         let fetchRequest = TrackerCategoryCoreData.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "title == %@", categoryName)

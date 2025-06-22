@@ -9,7 +9,7 @@ class CategoryViewController: UIViewController{
     var addCategoryButton: UIButton = {
         let button = UIButton()
         button.backgroundColor = .ypBlack
-        button.setTitle("Добавить Категорию", for: .normal)
+        button.setTitle(NSLocalizedString("categoryview.addcategory.button", comment: ""), for: .normal)
         button.setTitleColor(.ypWhite, for: .normal)
         button.layer.cornerRadius = 16
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -23,7 +23,7 @@ class CategoryViewController: UIViewController{
     }()
     let placeholderLabel: UILabel = {
         let label = UILabel()
-        label.text = "Привычки и события можно объединить по смыслу"
+        label.text = NSLocalizedString("categoryview.placeholder.title", comment: "")
         label.font = .systemFont(ofSize: 12, weight: .medium)
         label.textColor = .ypBlack
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -35,8 +35,6 @@ class CategoryViewController: UIViewController{
         let tableView = UITableView()
         tableView.tableHeaderView = UIView(frame: .zero)
         tableView.layer.cornerRadius = 16
-        tableView.separatorStyle = .singleLine
-        tableView.separatorColor = .ypGray
         tableView.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
@@ -74,7 +72,7 @@ class CategoryViewController: UIViewController{
     private func setupUI(){
         navigationItem.hidesBackButton = true
         view.backgroundColor = .ypWhite
-        title = "Категория"
+        title = NSLocalizedString("createhabit.category.title", comment: "")
         addCategoryButton.addTarget(self, action: #selector(addCategory), for: .touchUpInside)
         tableView.delegate = self
         tableView.dataSource = self
@@ -92,9 +90,13 @@ class CategoryViewController: UIViewController{
             
             placeholderImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             placeholderImageView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            placeholderImageView.widthAnchor.constraint(equalToConstant: 80),
+            placeholderImageView.heightAnchor.constraint(equalToConstant: 80),
             
             placeholderLabel.topAnchor.constraint(equalTo: placeholderImageView.bottomAnchor, constant: 8),
             placeholderLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            placeholderLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor,constant: 16),
+            placeholderLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             
             addCategoryButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
             addCategoryButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
@@ -104,11 +106,33 @@ class CategoryViewController: UIViewController{
     }
     
     @objc private func addCategory() {
-        let vc = NewCategoryViewController()
+        let vc = NewCategoryViewController(isNewCategory: true, categoryName: nil)
         vc.onCategoryCreated = { [weak self] in
             self?.viewModel.loadCategories()
         }
         navigationController?.pushViewController(vc, animated: true)
+    }
+    private func configureCorners(for cell: UITableViewCell, at indexPath: IndexPath) {
+        let isFirst = indexPath.row == 0
+        let isLast = indexPath.row == categories.count - 1
+
+        cell.contentView.layer.masksToBounds = true
+        cell.contentView.layer.cornerRadius = 0
+        cell.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+
+        if isFirst && isLast {
+            cell.contentView.layer.cornerRadius = 16
+            cell.contentView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner,
+                                                     .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+        } else if isFirst {
+            cell.contentView.layer.cornerRadius = 16
+            cell.contentView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        } else if isLast {
+            cell.contentView.layer.cornerRadius = 16
+            cell.contentView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+        } else {
+            cell.contentView.layer.cornerRadius = 0
+        }
     }
 }
 
@@ -125,19 +149,14 @@ extension CategoryViewController:UITableViewDataSource {
         { assertionFailure("no cell at CategoryTableVIewCell")
             return UITableViewCell()
         }
+        print(categories.count)
         let category = categories[indexPath.row]
         cell.textLabel?.text = category.name
         cell.checkmark.isHidden = !(category.name == checkedCategory) 
-        if indexPath.row == 0{
-            cell.contentView.layer.masksToBounds = true
-            cell.contentView.layer.cornerRadius = 16
-            cell.contentView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        }
+       configureCorners(for: cell, at: indexPath)
         if indexPath.row == categories.count - 1 {
-            cell.contentView.layer.masksToBounds = true
-            cell.contentView.layer.cornerRadius = 16
-            cell.contentView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
-            cell.separatorInset.right = .greatestFiniteMagnitude
+            print("прячу сепаратор")
+            cell.separatorView.isHidden = true
         }
         cell.contentView.backgroundColor = .ypBackground
         return cell
@@ -151,6 +170,33 @@ extension CategoryViewController: UITableViewDelegate {
         print(name)
         categoriesPicked?(name)
         navigationController?.popViewController(animated: true)
+        tableView.reloadData()
+    }
+    func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        let category = categories[indexPath.row]
+        
+        return UIContextMenuConfiguration(actionProvider: { actions in
+            return UIMenu(children: [
+                UIAction(title: NSLocalizedString("categoryview.edit.title", comment: "")) { [weak self] _ in
+                    guard let self = self else { return }
+                    let vc = NewCategoryViewController(isNewCategory: true, categoryName: category.name)
+                    vc.onCategoryCreated = { [weak self] in
+                        self?.viewModel.loadCategories()
+                    }
+                    self.navigationController?.pushViewController(vc, animated: true)
+                    
+                },
+                UIAction(title: NSLocalizedString("categoryview.delete.title", comment: ""), attributes: .destructive) { [weak self] _ in
+                    guard let self = self else { return }
+                    let alert = viewModel.makeAlert(category: category.name)
+                    present(alert, animated: true)
+                }
+            ])
+        })
+    }
+}
+extension CategoryViewController: TrackerCategoryStoreDelegate {
+    func store(_ store: TrackerCategoryStore, didUpdate update: TrackerCategoryStoreUpdate) {
         tableView.reloadData()
     }
 }

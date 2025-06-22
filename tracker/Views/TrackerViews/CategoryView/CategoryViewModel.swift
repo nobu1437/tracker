@@ -31,6 +31,24 @@ final class CategoryViewModel {
         selectedCategoryName = categories[index].name
         categoriesBinding?(categories)
     }
+    func deleteCategory(named name: String) {
+       try? store.deleteCategory(name)
+    }
+    func updateCategory(named oldName: String, new name: String) {
+       guard let categoryCorData =  store.findCategoryCoreData(by: oldName),
+             let category =  store.findCategory(by: name) else { return }
+        store.updateExistingTrackerCategory(categoryCorData, with: category)
+    }
+    func makeAlert(category: String) -> UIAlertController {
+        let alert = UIAlertController(title: "", message: "Эта категория точно не нужна?", preferredStyle: .actionSheet)
+        let action = UIAlertAction(title: "Отменить", style: .cancel)
+        let action2 = UIAlertAction(title: "Удалить", style: .destructive){[weak self] _ in
+            self?.deleteCategory(named: category)
+        }
+            alert.addAction(action2)
+            alert.addAction(action)
+        return alert
+    }
 }
 
 extension CategoryViewModel: TrackerCategoryStoreDelegate {

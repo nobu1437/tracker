@@ -28,7 +28,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             let navAppearance = UINavigationBarAppearance()
             navAppearance.titleTextAttributes = [
                 .font: UIFont.systemFont(ofSize: 16,weight: .medium),
-                .foregroundColor: UIColor.black ]
+                .foregroundColor: UIColor(resource: .ypBlack)]
             navAppearance.shadowColor = .clear
             navAppearance.backgroundColor = .ypWhite
             
@@ -36,16 +36,16 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
             let statisticVC = StatisticListViewController()
             let statisticNavVC = UINavigationController(rootViewController: statisticVC)
-            statisticNavVC.tabBarItem = UITabBarItem(title: "Статистика",
-                                                     image: UIImage(systemName:
-                                                                        "hare.fill"),
-                                                     tag: 0)
+            statisticNavVC.tabBarItem = UITabBarItem(title: NSLocalizedString("tabbar.statistics.title", comment: ""),
+                                                  image: UIImage(systemName:
+                                                                    "hare.fill"),
+                                                  tag: 0)
             let trackerVC = TrackerListViewController()
             let trackerNavVC = UINavigationController(rootViewController: trackerVC)
-            trackerNavVC.tabBarItem = UITabBarItem(title: "Трекеры",
-                                                   image: UIImage(systemName:
-                                                                    "record.circle.fill"),
-                                                   tag: 1)
+            trackerNavVC.tabBarItem = UITabBarItem(title: NSLocalizedString("tabbar.trackers.title", comment: ""),
+                                                image: UIImage(systemName:
+                                                                "record.circle.fill"),
+                                                tag: 1)
             tabBar.setViewControllers([trackerNavVC,statisticNavVC], animated: true)
             window?.rootViewController = tabBar
         } else {
