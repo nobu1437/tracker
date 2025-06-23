@@ -2,6 +2,8 @@ import UIKit
 
 final class NewCategoryViewController: UIViewController {
     var onCategoryCreated: (() -> Void)?
+    var isNewCategory: Bool
+    var categoryName: String?
     
     private let viewModel = CategoryViewModel()
     private let textField: UITextField = {
@@ -25,6 +27,14 @@ final class NewCategoryViewController: UIViewController {
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
+    init(isNewCategory: Bool, categoryName:String?) {
+        self.isNewCategory = isNewCategory
+        self.categoryName = categoryName
+        super.init(nibName: nil, bundle: nil)
+    }
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -35,7 +45,8 @@ final class NewCategoryViewController: UIViewController {
     private func setupUI() {
         navigationItem.hidesBackButton = true
         view.backgroundColor = .ypWhite
-        title = "Новая Категория"
+        title = isNewCategory ? "Новая Категория" : "Редактирование категории"
+        textField.text = categoryName
         textField.addTarget(self, action: #selector(textFieldDidChange), for: .editingChanged)
         view.addSubview(textField)
         readyButton.addTarget(self, action: #selector(ReadyTapped), for: .touchUpInside)
@@ -55,7 +66,11 @@ final class NewCategoryViewController: UIViewController {
     
     @objc private func ReadyTapped() {
         guard let name = textField.text, !name.isEmpty else { return }
-        viewModel.addCategory(named: name)
+        if isNewCategory{
+            viewModel.addCategory(named: name)
+        } else if let oldName = categoryName {
+            viewModel.updateCategory(named: oldName, new: name)
+        }
         onCategoryCreated?()
         navigationController?.popViewController(animated: true)
     }

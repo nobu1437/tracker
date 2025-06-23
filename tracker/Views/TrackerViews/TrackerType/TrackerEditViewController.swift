@@ -54,7 +54,13 @@ final class TrackerEditViewController: UIViewController {
     }
     
     @objc private func categoryButtonTapped() {
-        
+        let categoryVC = CategoryViewController(checkedCategory: category)
+        categoryVC.categoriesPicked = { [weak self] category in
+            self?.category = category
+            print("Выбрана категория: \(self?.category)")
+            self?.tableView.reloadRows(at: [IndexPath(row: 0, section: 0)], with: .automatic)
+        }
+        navigationController?.pushViewController(categoryVC, animated: true)
     }
     
     @objc private func scheduleButtonTapped() {
@@ -78,7 +84,7 @@ final class TrackerEditViewController: UIViewController {
                               name: text,
                               color: checkedColor,
                               emoji: checkedEmoji,
-                              schedule: isRegular ? self.schedule : [.monday,.tuesday,.wednesday,.thursday,.friday,.saturday,.sunday], isRegular: isRegular ? true : false)
+                              schedule: isRegular ? self.schedule : [.monday,.tuesday,.wednesday,.thursday,.friday,.saturday,.sunday], isRegular: isRegular ? true : false, isPinned: self.tracker.isPinned)
         
         let categoryName = category ?? "Новая категория"
         try? trackerStore.addNewTracker(tracker, to: categoryName)

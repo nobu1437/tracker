@@ -10,6 +10,13 @@ final class TrackerListCell: UICollectionViewCell {
     let daysCount = UILabel()
     let addButton = UIButton()
     let backgroundColorView = UIView()
+    let pinImage: UIImageView = {
+        let image = UIImageView()
+        image.image = UIImage(systemName: "pin.fill")
+        image.tintColor = .white
+        image.translatesAutoresizingMaskIntoConstraints = false
+        return image
+    }()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -51,6 +58,8 @@ final class TrackerListCell: UICollectionViewCell {
         backgroundColorView.isUserInteractionEnabled = true
         backgroundColorView.addGestureRecognizer(tap)
         
+        backgroundColorView.addSubview(pinImage)
+        
         setupConstraints()
     }
     
@@ -79,7 +88,12 @@ final class TrackerListCell: UICollectionViewCell {
             addButton.leadingAnchor.constraint(equalTo: daysCount.trailingAnchor, constant: 8),
             addButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -12),
             addButton.widthAnchor.constraint(equalToConstant: 34),
-            addButton.heightAnchor.constraint(equalToConstant: 34)
+            addButton.heightAnchor.constraint(equalToConstant: 34),
+            
+            pinImage.centerYAnchor.constraint(equalTo: emojiLabel.centerYAnchor),
+            pinImage.trailingAnchor.constraint(equalTo: backgroundColorView.trailingAnchor, constant: -12),
+            pinImage.heightAnchor.constraint(equalToConstant: 12),
+            pinImage.widthAnchor.constraint(equalToConstant: 12)
         ])
     }
 
