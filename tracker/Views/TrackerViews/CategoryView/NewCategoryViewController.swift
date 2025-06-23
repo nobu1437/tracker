@@ -65,10 +65,10 @@ final class NewCategoryViewController: UIViewController {
     }
     
     @objc private func ReadyTapped() {
-        guard let name = textField.text, !name.isEmpty, let oldName = categoryName else { return }
+        guard let name = textField.text, !name.isEmpty else { return }
         if isNewCategory{
             viewModel.addCategory(named: name)
-        } else {
+        } else if let oldName = categoryName {
             viewModel.updateCategory(named: oldName, new: name)
         }
         onCategoryCreated?()
