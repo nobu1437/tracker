@@ -13,8 +13,4 @@ target 'tracker' do
     pod "SnapshotTesting"
   end
 
-  target 'trackerUITests' do
-	pod "SnapshotTesting"
-  end
-
 end
